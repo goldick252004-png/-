@@ -1,0 +1,115 @@
+{
+ "dur": 45.0,
+ "events": [
+  [
+   0.0,
+   "hyoshigi",
+   "first sound: hyoshigi clap"
+  ],
+  [
+   0.55,
+   "shakuhachi",
+   "shakuhachi motif A4"
+  ],
+  [
+   4.0,
+   "shamisen",
+   "slide lands on 2021"
+  ],
+  [
+   7.5,
+   "shamisen",
+   "shamisen ostinato 96"
+  ],
+  [
+   10.0,
+   "taiko",
+   "shime pulse (the run)"
+  ],
+  [
+   13.0,
+   "taiko",
+   "jump"
+  ],
+  [
+   14.0,
+   "shamisen",
+   "throw: rising run"
+  ],
+  [
+   15.0,
+   "taiko",
+   "GOAL 15.0: odaiko + chord + hyoshigi"
+  ],
+  [
+   19.0,
+   "shakuhachi",
+   "shakuhachi solo (2022)"
+  ],
+  [
+   22.4,
+   "koto",
+   "save: dull koto"
+  ],
+  [
+   25.0,
+   "other",
+   "TURN 25.0: o-tsuzumi + odaiko + strum (after absolute silence)"
+  ],
+  [
+   25.625,
+   "taiko",
+   "taiko heartbeat → roll"
+  ],
+  [
+   27.5,
+   "taiko",
+   "seal 27.5"
+  ],
+  [
+   30.0,
+   "taiko",
+   "seal 30.0"
+  ],
+  [
+   32.5,
+   "taiko",
+   "seal 32.5"
+  ],
+  [
+   31.0,
+   "hyoshigi",
+   "hyoshigi accelerate (kabuki curtain call)"
+  ],
+  [
+   35.0,
+   "other",
+   "roll cut 35.0: hand bell"
+  ],
+  [
+   35.4,
+   "shakuhachi",
+   "opening motif returns"
+  ],
+  [
+   39.3,
+   "koto",
+   "koto glissando (the club colours)"
+  ],
+  [
+   42.0,
+   "taiko",
+   "EMBLEM 42.0: odaiko + shamisen sawari note"
+  ]
+ ],
+ "silences": [
+  [
+   17.6,
+   18.95
+  ],
+  [
+   24.2,
+   25.0
+  ]
+ ]
+}

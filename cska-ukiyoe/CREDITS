@@ -1,0 +1,25 @@
+ЦСКА · Оттиски — third-party material
+
+Club identity (user-supplied; used with the rights holder's permission as stated by the user)
+  Emblem «ЦСКА» (main version) and text logo, brand colours #003080 / #FF0030, line graphic —
+  from «Руководство по использованию айдентики», Гандбольный клуб ЦСКА, design: Студия Артемия Лебедева, 2025.
+  The emblem is placed unchanged, without effects (brand book, p. 35); layout follows p. 51.
+
+Voice
+  Piper TTS (MIT, github.com/rhasspy/piper), voice ru_RU-irina-medium (huggingface.co/rhasspy/piper-voices).
+  The voice's training dataset (RHVoice "Irina") is listed with licence "Unknown" — clear it or replace the voice before public/commercial release.
+
+Music and sound
+  Original score and all foley synthesised in code for this film.
+  Samples (CC0): FreePats project (freepats.zenvoid.org), VS Chamber Orchestra: Community Edition (Versilian Studios),
+  Versilian Community Sample Library (Versilian Studios).
+  Plucked strings (shamisen, koto): physical modelling, core/audio/pluck.py (Lemo-Opuscar, MIT).
+
+Fonts (SIL Open Font License 1.1, via Google Fonts)
+  Noto Serif JP (Cyrillic subset) — Google / Adobe
+  Inter — Rasmus Andersson
+
+Code
+  print.js and the instrument / paper-foley recipes adapted from the Lemo-Opuscar library (MIT, github.com/lemomo-ai/lemo-opuscar).
+
+Facts: see FACTS.md.

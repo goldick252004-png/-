@@ -37,4 +37,4 @@ export const T = {
 export const REVEAL = 0.34;
 
 // Narration: id → start time (sub = the subtitle text, written with digits)
-export const VO = { L1: 2.6, L2: 7.8, L3: 19.3, L4: 21.6, L5: 25.4, L6: 35.0, L7: 40.0 };
+export const VO = { L1: 2.6, L2: 7.8, L3: 19.0, L4: 21.45, L5: 25.4, L6: 35.0, L7: 40.0 };
