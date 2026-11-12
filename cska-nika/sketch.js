@@ -26,3 +26,17 @@ export function sketch(ctx, W, H) {
     ctx.fillStyle = '#4a3d55'; ctx.font = '800 22px Nunito'; ctx.textAlign = 'left'; ctx.fillText(n, x + 78, y + 40);
   });
 }
+
+import { drawPerson, ppose, CAST } from './people.js';
+export function cast(ctx, W, H) {
+  ctx.fillStyle = '#fbf3e6'; ctx.fillRect(0, 0, W, H);
+  const gy = 950, names = ['varya', 'grandpa', 'timur', 'liza', 'mom', 'dad', 'boy'];
+  const lab = { varya: 'Варя', grandpa: 'Михалыч', timur: 'Тимур', liza: 'Лиза', mom: 'мама', dad: 'папа', boy: 'сын' };
+  drawNika(ctx, pose({ x: 160, y: gy, s: 1, turn: .2 }), 0);
+  names.forEach((n, i) => {
+    const x = 400 + i * 225;
+    drawPerson(ctx, n, ppose({ x, y: gy, s: 1.3, turn: (i % 3 - 1) * .3, mouth: i % 2 ? .6 : .1, gloves: n === 'varya' }), 0);
+    ctx.fillStyle = '#4a3d55'; ctx.font = '800 30px Nunito'; ctx.textAlign = 'center'; ctx.fillText(lab[n], x, gy + 60);
+  });
+  drawPerson(ctx, 'grandpa', ppose({ x: 1800, y: gy, s: 1.3, sit: 1, mouth: .5 }), 0);
+}

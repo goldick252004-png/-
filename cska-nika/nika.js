@@ -51,7 +51,7 @@ function maneFront(ctx, p) {
 }
 function ear(ctx, side, p, t) {
   const tw = Math.sin(t * 3 + side) * .04;
-  ctx.save(); ctx.translate(side * 46 + p.turn * 6, -222); ctx.rotate(side * .42 + tw);
+  ctx.save(); ctx.translate(side * 46 + p.turn * 6, -222); ctx.rotate(side * (.42 + (p.earDrop || 0) * 1.25) + tw);
   blob(ctx, curve([[-17, 6], [-15, -24], [0, -58], [15, -24], [17, 6]], false), C.ear, { lw: 4 });
   blob(ctx, curve([[-8, 2], [-7, -20], [0, -42], [7, -20], [8, 2]], false), C.earIn, { lw: 0, shade: false });
   ctx.restore();
@@ -108,7 +108,10 @@ function head(ctx, p, t) {
   for (const s of [-1, 1]) blob(ctx, ell(s * 27 + tm, -62, 7, 10, s * .5), C.nostril, { lw: 0, shade: false });
   // open smile with the costume's light lip rim
   const m = clamp(p.mouth), mx = tm;
-  if (m < .08) {
+  if (p.mouth < 0) { // sad
+    ctx.strokeStyle = C.mouth; ctx.lineWidth = 6; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(mx - 30, -24); ctx.quadraticCurveTo(mx, -44 + p.mouth * 6, mx + 30, -24); ctx.stroke();
+  } else if (m < .08) {
     ctx.strokeStyle = C.mouth; ctx.lineWidth = 6; ctx.lineCap = 'round';
     ctx.beginPath(); ctx.moveTo(mx - 40, -36); ctx.quadraticCurveTo(mx, -12, mx + 40, -36); ctx.stroke();
   } else {
@@ -217,7 +220,8 @@ export function hands(p) { // world positions of both hands (for holding things)
     const [a1, a2] = side < 0 ? p.armL : p.armR; const sx = side * 58, sy = -250;
     const ex = sx + side * Math.sin(a1) * 62, ey = sy + Math.cos(a1) * 62;
     const hx = ex + side * Math.sin(a1 + a2) * 56, hy = ey + Math.cos(a1 + a2) * 56;
-    out.push(local2world(p, hx, hy + 8 - p.bob));
+    const c = Math.cos(p.lean), sn = Math.sin(p.lean), y0 = hy + 10;
+    out.push(local2world(p, hx * c - y0 * sn, hx * sn + y0 * c - p.bob));
   }
   return out;
 }
