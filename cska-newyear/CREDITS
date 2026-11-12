@@ -1,0 +1,19 @@
+ЦСКА · С Новым годом! — third-party material
+
+Club identity (user-supplied; used with the rights holder's permission as stated by the user)
+  Emblem «ЦСКА» (main version), brand colours #003080 / #FF0030, the line graphic —
+  «Руководство по использованию айдентики», Гандбольный клуб ЦСКА, design: Студия Артемия Лебедева, 2025.
+  The emblem appears only on the flat end card, unchanged and without effects (brand book p. 35).
+
+Picture
+  Room HDRI «Lythwood Lounge», walnut wood textures, desk lamp model «Desk Lamp Arm 01» — Poly Haven (CC0).
+  Everything else (book, cut-paper characters and sets) drawn in code for this film.
+  Engine files book.js, paper.js, cutmesh.js, post.js, lib.js adapted from the Lemo-Opuscar Paper Pop-up demo (MIT).
+  three.js (MIT).
+
+Music and sound
+  Original score and all paper foley synthesised in code for this film.
+  Samples (CC0): VS Chamber Orchestra: Community Edition (Versilian Studios), Versilian Community Sample Library (Versilian Studios).
+  Music box: modal synthesis, core/audio/pluck.py (Lemo-Opuscar, MIT).
+
+Fonts (SIL Open Font License 1.1, via Google Fonts): Nunito (Vernon Adams et al.), Inter (Rasmus Andersson).
