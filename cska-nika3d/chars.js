@@ -108,7 +108,7 @@ function driver(root, body, neck, headG, parts) {
     headG.rotation.set(p.head[1], p.head[0], p.head[2], 'YXZ');
     parts.arms[0].set(p.armL, p.handL); parts.arms[1].set(p.armR, p.handR);
     parts.legs[0].set(p.legL); parts.legs[1].set(p.legR);
-    parts.eyes.forEach(e => e.set(p.look[0], p.look[1], p.blink));
+    parts.eyes.forEach((e, i) => e.set(p.look[0], p.look[1], i === 0 ? Math.max(p.blink, p.wink || 0) : p.blink));
     parts.face && parts.face(p);
   };
 }
@@ -236,8 +236,8 @@ export function buildPerson(o) {
   const mouthG = new THREE.Group(); mouthG.position.set(0, hc.y - r * .38, r * .9); headG.add(mouthG);
   const mo = mesh(new THREE.SphereGeometry(r * .24, 24, 12, 0, TAU, Math.PI / 2, Math.PI / 2), M('#7a1f2e', { roughness: .5 }), false); mo.scale.set(1.2, .9, .5); mouthG.add(mo);
   const tg = mesh(sph(r * .1, 12, 8), M('#ee6b80', { roughness: .4 }), false); tg.scale.set(1.3, .5, .6); tg.position.set(0, -r * .14, r * .03); mouthG.add(tg);
-  const teeth = mesh(new THREE.BoxGeometry(r * .36, r * .06, r * .05), M('#ffffff', { roughness: .3 }), false); teeth.position.set(0, -r * .02, r * .05); mouthG.add(teeth);
-  const eyes = [-1, 1].map(s => { const e = makeEye(r * (child ? .3 : .23), o.iris || '#6a3b1f', skin, o.lashes ? s : 0); e.g.position.set(s * r * .38, hc.y + r * .08, r * .8); e.g.rotation.y = s * .25; headG.add(e.g); return e; });
+  
+  const eyes = [-1, 1].map(s => { const e = makeEye(r * (child ? .3 : .23), o.iris || '#6a3b1f', skin, o.lashes ? s : 0); e.g.position.set(s * r * .37, hc.y + r * .06, r * .74); e.g.rotation.y = s * .25; headG.add(e.g); return e; });
   const brows = [-1, 1].map(s => { const b = mesh(limbGeo(r * .045, r * .3), M(o.brow || o.hair, { roughness: .8 }), false); b.rotation.z = Math.PI / 2; b.position.set(s * r * .38, hc.y + r * .44, r * .88); headG.add(b); return b; });
   // hair
   const hairM = M(o.hair, { roughness: .45, sheen: .8, sheenColor: new THREE.Color('#ffffff'), sheenRoughness: .35, clearcoat: .2 });
@@ -245,7 +245,7 @@ export function buildPerson(o) {
   const fringe = mesh(new THREE.SphereGeometry(r * 1.06, 40, 12, Math.PI * .25, Math.PI * .5, Math.PI * .22, Math.PI * .18), hairM); fringe.position.copy(hc); headG.add(fringe);
   const sideL = (s, len, w) => { const g = mesh(limbGeo(r * w, len), hairM); g.position.set(s * r * .85, hc.y + r * .25, -r * .2); g.rotation.z = s * .08; headG.add(g); return g; };
   const st = o.style;
-  if (st === 'buns') for (const s of [-1, 1]) { const b = mesh(sph(r * .38, 24, 18), hairM); b.position.set(s * r * .78, hc.y + r * .62, -r * .15); headG.add(b); const bow = mesh(new THREE.TorusGeometry(r * .2, r * .08, 8, 16), M('#e3243a', { roughness: .5 })); bow.position.set(s * r * .7, hc.y + r * .38, -r * .05); bow.rotation.y = s * .8; headG.add(bow); }
+  if (st === 'buns') for (const s of [-1, 1]) { const b = mesh(sph(r * .38, 24, 18), hairM); b.position.set(s * r * .82, hc.y + r * .38, -r * .45); headG.add(b); const bow = mesh(new THREE.TorusGeometry(r * .17, r * .07, 8, 16), M('#e3243a', { roughness: .5 })); bow.position.set(s * r * .88, hc.y + r * .2, -r * .2); bow.rotation.y = s * 1.1; headG.add(bow); }
   if (st === 'ponytail' || st === 'braid') { const pt = new THREE.Group(); pt.position.set(0, hc.y + r * .55, -r * .85); headG.add(pt); const tie = mesh(new THREE.TorusGeometry(r * .14, r * .06, 8, 16), M(o.tie || '#e3243a', { roughness: .5 })); pt.add(tie);
     if (st === 'braid') for (let i = 0; i < 6; i++) { const b = mesh(sph(r * (.22 - i * .015), 16, 12), hairM); b.position.set(0, -r * (.15 + i * .3), -r * .1 - i * r * .02); pt.add(b); }
     else { const tl = mesh(limbGeo(r * .26, r * 1.1, r * .12), hairM); tl.rotation.x = .5; pt.add(tl); }

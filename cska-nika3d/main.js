@@ -1,10 +1,10 @@
 import * as THREE from 'three';
-import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-import { buildNika, buildPerson, defaultPose, TOPS, COL } from './chars.js';
+import { buildNika, buildPerson, defaultPose, TOPS } from './chars.js';
+import { clamp, seg, ss, back } from './lib.js';
 
 const W = innerWidth, H = innerHeight, V = H > W, Q = new URLSearchParams(location.search);
 const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
@@ -13,42 +13,65 @@ renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadow
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0; renderer.outputColorSpace = THREE.SRGBColorSpace;
 document.getElementById('stage').appendChild(renderer.domElement);
 const ov = document.getElementById('ov'); ov.width = W; ov.height = H; const OX = ov.getContext('2d');
-const scene = new THREE.Scene();
-const cam = new THREE.PerspectiveCamera(28, W / H, .05, 200);
+const cam = new THREE.PerspectiveCamera(36, W / H, .05, 400);
 const composer = new EffectComposer(renderer);
-composer.addPass(new RenderPass(scene, cam));
-const bloom = new UnrealBloomPass(new THREE.Vector2(W / 2, H / 2), .3, .5, .92); composer.addPass(bloom);
+const rp = new RenderPass(new THREE.Scene(), cam); composer.addPass(rp);
+const bloom = new UnrealBloomPass(new THREE.Vector2(W / 2, H / 2), .4, .5, .9); composer.addPass(bloom);
 composer.addPass(new OutputPass());
+await Promise.all(['800 40px Nunito', '900 40px Nunito', '700 40px Caveat'].map(f => document.fonts.load(f, 'Дедушка ЦСКА С Новым годом')));
+window.DUR = 88;
+export const LOGO = { H: [1100, 130, 420, 420], V: [330, 210, 420, 420] };
+const u = W / (V ? 1080 : 1920);
 
-await Promise.all(['800 40px Nunito', '900 40px Nunito'].map(f => document.fonts.load(f, 'Ника ЦСКА')));
-const hdr = await new RGBELoader().loadAsync('/core/assets/polyhaven/lythwood_lounge_2k.hdr'); hdr.mapping = THREE.EquirectangularReflectionMapping;
-scene.environment = hdr; scene.environmentIntensity = .35;
-
-// —— character sheet ——
-function sheet() {
-  scene.background = new THREE.Color('#f3e6d6');
-  const key = new THREE.DirectionalLight('#fff1dc', 1.7); key.position.set(2.5, 4, 4); key.castShadow = true; key.shadow.mapSize.set(2048, 2048); Object.assign(key.shadow.camera, { left: -3, right: 3, top: 3, bottom: -1, near: .5, far: 15 }); key.shadow.radius = 6; key.shadow.bias = -.0005; scene.add(key);
-  const rim = new THREE.DirectionalLight('#a9c0ff', 1.6); rim.position.set(-3, 2.5, -3); scene.add(rim);
-  scene.add(new THREE.HemisphereLight('#ffffff', '#d9c2a8', .25));
-  const floor = new THREE.Mesh(new THREE.CircleGeometry(8, 64), new THREE.MeshStandardMaterial({ color: '#efe0cd', roughness: .9 })); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
-  const n1 = buildNika(), n2 = buildNika();
-  const girl = buildPerson({ child: 1, skin: '#f6d2b8', hair: '#7a4426', style: 'buns', iris: '#6b3d22', top: TOPS.tee, bottom: '#3a4fd8', long: 1, shoe: '#ffffff', lashes: 1, female: 1 });
-  const p1 = defaultPose(); Object.assign(p1, { x: -1.15, rotY: .35, head: [.15, 0, .05], look: [.2, 0], mouth: .9 });
-  const p2 = defaultPose(); Object.assign(p2, { x: .15, rotY: -.15, head: [-.1, -.05, -.1], look: [0, .1], mouth: 1, brows: 1, armR: [2.4, .15, 1.0], handR: 1, armL: [.25, .25, .6], earDrop: 0 });
-  const pg = defaultPose(); Object.assign(pg, { x: 1.25, rotY: -.35, head: [-.15, -.1, .08], look: [-.2, .1], mouth: .8, armL: [.2, .3, .9], armR: [.2, .3, .9], brows: .5 });
-  n1.pose(p1); n2.pose(p2); girl.pose(pg);
-  scene.add(n1.root, n2.root, girl.root);
-  cam.position.set(0, 1.2, 5.6); cam.lookAt(0, .9, 0);
-  return () => {
-    OX.clearRect(0, 0, W, H); OX.textAlign = 'left'; OX.fillStyle = '#1d2a9e'; OX.font = '900 60px Nunito'; OX.fillText('Ника и Соня — 3D-эскиз', 70, 96);
-    OX.fillStyle = '#6a5a70'; OX.font = '800 28px Nunito'; OX.fillText('объём, мягкий свет, мех с бархатным отливом · рендер кодом (three.js)', 72, 140);
-    OX.textAlign = 'center'; OX.font = '800 30px Nunito'; OX.fillStyle = '#4a3d55';
-    [['Ника', .2], ['Ника машет', .5], ['Соня, 7 лет', .8]].forEach(([s, x]) => OX.fillText(s, W * x, H - 40));
-  };
+function caption(txt, k) {
+  if (!txt || k <= 0) return;
+  const size = (V ? 66 : 60) * u; OX.save(); OX.font = `900 ${size}px Nunito`; OX.letterSpacing = (size * .03).toFixed(1) + 'px';
+  let lines = txt.split('\n').flatMap(l => { if (OX.measureText(l).width < W * .88) return [l]; const w = l.split(' '), h = Math.ceil(w.length / 2); return [w.slice(0, h).join(' '), w.slice(h).join(' ')]; });
+  const lh = size * 1.16, y0 = V ? H * .79 - (lines.length - 1) * lh / 2 : H - 92 * u - (lines.length - 1) * lh;
+  const s = back(clamp(k * 2.2)), a = clamp(k * 4);
+  OX.globalAlpha = a; OX.translate(W / 2, y0); OX.scale(s, s); OX.textAlign = 'center'; OX.textBaseline = 'middle'; OX.lineJoin = 'round';
+  lines.forEach((l, i) => { OX.shadowColor = 'rgba(8,10,40,.6)'; OX.shadowBlur = size * .35; OX.shadowOffsetY = size * .06; OX.lineWidth = size * .2; OX.strokeStyle = '#1d2a9e'; OX.strokeText(l, 0, i * lh); OX.shadowColor = 'transparent'; OX.fillStyle = '#ffffff'; OX.fillText(l, 0, i * lh); });
+  OX.restore();
 }
+function title(txt, x, y, size, k, line) {
+  if (k <= 0) return; OX.save(); OX.translate(x, y); OX.scale(k, k); OX.font = `900 ${size}px Nunito`; OX.textAlign = 'center'; OX.textBaseline = 'middle'; OX.lineJoin = 'round';
+  OX.shadowColor = 'rgba(8,10,40,.6)'; OX.shadowBlur = size * .4; OX.lineWidth = size * .22; OX.strokeStyle = line; OX.strokeText(txt, 0, 0); OX.shadowColor = 'transparent'; OX.fillStyle = '#ffffff'; OX.fillText(txt, 0, 0); OX.restore();
+}
+// dips to dark at cuts between locations
+const DIPS = [[11, .3], [19, .3], [40, .3], [45.33, .14], [50.67, .14], [56, .3], [59.5, .25], [64, .3], [82, .3]];
 
-let overlay = () => {};
-if (Q.get('view') === 'sheet') overlay = sheet();
-window.DUR = 1;
-window.render = t => { const t0 = performance.now(); composer.render(); overlay(t); window.LAST_MS = performance.now() - t0; };
+let film = null, overlay = null;
+if (Q.get('view') === 'sheet') {
+  const { sheetScene } = await import('./sheet.js'); overlay = sheetScene(renderer, composer, rp, cam, OX, W, H);
+} else {
+  const { buildFilm } = await import('./film.js'); film = await buildFilm();
+}
+const vt = new THREE.Vector3();
+window.render = t => {
+  OX.clearRect(0, 0, W, H);
+  if (overlay) { overlay(t); return; }
+  t = clamp(t, 0, window.DUR - 1e-3);
+  const S = film.S.find(s => t >= s.a && t < s.b), lt = t - S.a;
+  const sh = S.shots.find(s => t >= s.a && t < s.b) || S.shots[S.shots.length - 1];
+  let c = (V && sh.V ? sh.V : sh.H)(t);
+  let fov = c[6]; if (V && !sh.V) fov *= 1.6;
+  if (sh.dyn) { const d = sh.dyn(lt, V); c = [...d, fov]; }
+  cam.fov = fov; cam.position.set(c[0], c[1], c[2]); cam.lookAt(c[3], c[4], c[5]); cam.updateProjectionMatrix(); cam.updateMatrixWorld();
+  const LR = (V ? LOGO.V : LOGO.H).map(x => x * u);
+  S.update(t, lt, V, S.finale ? [cam, LR, W, H] : null);
+  rp.scene = S.set.scene; composer.render();
+  // overlay: vignette, captions, finale titles, dips
+  const g = OX.createRadialGradient(W / 2, H / 2, Math.min(W, H) * .4, W / 2, H / 2, Math.max(W, H) * .78); g.addColorStop(0, 'rgba(8,10,40,0)'); g.addColorStop(1, 'rgba(8,10,40,.38)'); OX.fillStyle = g; OX.fillRect(0, 0, W, H);
+  for (const [a, b, txt] of S.caps || []) if (t > a - .01 && t < b) caption(txt, Math.min(t - a, b - t) / .5);
+  if (S.finale) {
+    const L = V ? LOGO.V : LOGO.H, pop = t0 => back(clamp((lt - t0) / .45));
+    const tx = (V ? W / 2 : (L[0] + L[2] / 2) * u), y1 = (L[1] + L[3] + (V ? 150 : 120)) * u, y2 = y1 + (V ? 120 : 125) * u;
+    title('С Новым годом!', tx, y1, (V ? 104 : 112) * u, pop(.6), '#1d2a9e'); title('Твой ЦСКА', tx, y2, (V ? 92 : 96) * u, pop(1.0), '#e3243a');
+    if (Q.get('logo')) { OX.strokeStyle = '#ff0'; OX.lineWidth = 3; OX.strokeRect(L[0] * u, L[1] * u, L[2] * u, L[3] * u); }
+  }
+  let dark = t < .5 ? 1 - t / .5 : 0;
+  for (const [c0, d] of DIPS) { const k = 1 - Math.abs(t - c0) / d; if (k > dark) dark = k; }
+  if (t > window.DUR - .5) dark = Math.max(dark, 0);
+  if (dark > 0) { OX.fillStyle = `rgba(8,10,34,${ss(dark)})`; OX.fillRect(0, 0, W, H); }
+};
 window.READY = true;
