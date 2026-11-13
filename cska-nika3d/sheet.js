@@ -11,12 +11,13 @@ export function sheetScene(renderer, composer, rp, cam, OX, W, H) {
   scene.add(new THREE.HemisphereLight('#ffffff', '#d9c2a8', .25));
   const floor = new THREE.Mesh(new THREE.CircleGeometry(8, 64), new THREE.MeshStandardMaterial({ color: '#efe0cd', roughness: .9 })); floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
   const n1 = buildNika(), n2 = buildNika();
-  const girl = buildPerson({ child: 1, skin: '#f6d2b8', hair: '#7a4426', style: 'buns', iris: '#6b3d22', top: TOPS.tee, bottom: '#3a4fd8', long: 1, shoe: '#ffffff', lashes: 1, female: 1 });
+  const girl = buildPerson({ child: 1, skin: '#f6d2b8', hair: '#7a4426', style: 'pigtails', bangs: 1, iris: '#6b3d22', top: TOPS.tee, bottom: '#3a4fd8', long: 1, shoe: '#ffffff', lashes: 1, female: 1 });
   n1.pose(Object.assign(defaultPose(), { x: -1.15, rotY: .35, head: [.15, 0, .05], look: [.2, 0], mouth: .9 }));
   n2.pose(Object.assign(defaultPose(), { x: .15, rotY: -.15, head: [-.1, -.05, -.1], look: [0, .1], mouth: 1, armR: [2.4, .15, 1.0], handR: 1, armL: [.25, .25, .6] }));
   girl.pose(Object.assign(defaultPose(), { x: 1.25, rotY: -.35, head: [-.15, -.1, .08], look: [-.2, .1], mouth: .8, armL: [.2, .3, .9], armR: [.2, .3, .9] }));
   scene.add(n1.root, n2.root, girl.root);
   cam.position.set(0, 1.2, 5.6); cam.lookAt(0, .9, 0);
+  if (location.search.includes('zoom')) { cam.position.set(1.0, 1.0, 1.6); cam.lookAt(1.2, .85, 0); }
   return () => {
     composer.render();
     OX.textAlign = 'left'; OX.fillStyle = '#1d2a9e'; OX.font = '900 60px Nunito'; OX.fillText('Ника и Соня — 3D-эскиз', 70, 96);

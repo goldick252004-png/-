@@ -105,10 +105,9 @@ creak_door(9.6, .12); wind(9.5, 2.0, .55); flutter(9.8, 1.4, .2)
 # S2 city (11–19)
 wind(10.9, 8.4, .45); flutter(11, 7.6, .14); sleigh(12.5, 13.6, 6, .25); swoosh(14.55, .5, .25); swoosh(16.95, .5, .25)
 # S3 arena (19–28)
-for k in range(20):
-    tb = 19 + (k + .5) / 1.6
-    if tb < 21.6: add(buf, thump(.45, 140) * 1, tb, 1, .2)
-for k, tb in enumerate([21.9, 22.3, 22.6, 22.85]): add(buf, thump(.25 * (1 - k * .2), 150), tb, 1, .4)
+for k in range(8):  # the dribble: a bounce every 1/1.6 s, dying away once Ника lets go at 21.6
+    lt = (k + .5) / 1.6; dk = 1 if lt < 2.6 else math.exp(-(lt - 2.6) * 1.1)
+    add(buf, thump(.45 * dk, 140 + (1 - dk) * 30), 19 + lt, 1, .2)
 flutter(21.3, 1.9, .16); add(buf, (bp(noise(.12), 1500, 6000) * env_exp(.12, .03)) * .25, 23.2)
 sparkle(25.4, .45, n=8); slide_whistle(25.4, 500, 1400, .35, .12); swoosh(26.1, .35, .3); add(buf, thump(.4, 90), 26.95)
 # S4 sled (28–40)

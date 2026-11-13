@@ -19,7 +19,8 @@ const rp = new RenderPass(new THREE.Scene(), cam); composer.addPass(rp);
 const bloom = new UnrealBloomPass(new THREE.Vector2(W / 2, H / 2), .4, .5, .9); composer.addPass(bloom);
 composer.addPass(new OutputPass());
 await Promise.all(['800 40px Nunito', '900 40px Nunito', '700 40px Caveat'].map(f => document.fonts.load(f, 'Дедушка ЦСКА С Новым годом')));
-window.DUR = 88;
+const FULL = 88, SEG = (Q.get('seg') || '').split(',').map(Number); // ?seg=a,b renders only that stretch (for re-renders)
+const T0 = SEG.length === 2 ? SEG[0] : 0; window.DUR = SEG.length === 2 ? SEG[1] - SEG[0] : FULL;
 export const LOGO = { H: [1100, 130, 420, 420], V: [330, 210, 420, 420] };
 const u = W / (V ? 1080 : 1920);
 
@@ -50,7 +51,7 @@ const vt = new THREE.Vector3();
 window.render = t => {
   OX.clearRect(0, 0, W, H);
   if (overlay) { overlay(t); return; }
-  t = clamp(t, 0, window.DUR - 1e-3);
+  t = clamp(t + T0, 0, FULL - 1e-3);
   const S = film.S.find(s => t >= s.a && t < s.b), lt = t - S.a;
   const sh = S.shots.find(s => t >= s.a && t < s.b) || S.shots[S.shots.length - 1];
   let c = (V && sh.V ? sh.V : sh.H)(t);
@@ -71,7 +72,7 @@ window.render = t => {
   }
   let dark = t < .5 ? 1 - t / .5 : 0;
   for (const [c0, d] of DIPS) { const k = 1 - Math.abs(t - c0) / d; if (k > dark) dark = k; }
-  if (t > window.DUR - .5) dark = Math.max(dark, 0);
+  if (t > FULL - .5) dark = Math.max(dark, 0);
   if (dark > 0) { OX.fillStyle = `rgba(8,10,34,${ss(dark)})`; OX.fillRect(0, 0, W, H); }
 };
 window.READY = true;

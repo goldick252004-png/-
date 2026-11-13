@@ -29,7 +29,7 @@ export const PLAYERS = [
   { hair: '#e8c27a', style: 'bob', skin: '#f6dcc6', num: 9, h: .95 }
 ];
 export function player(i) { const d = PLAYERS[i]; return buildPerson({ ...d, female: 1, lashes: 1, iris: ['#5a3a20', '#3a6ab0', '#4a7a3a'][i % 3], top: TOPS.kit(d.num), bottom: BLUE, sock: RED, shoe: '#ffffff', trim: '#ffffff' }); }
-export const girl = () => buildPerson({ child: 1, skin: '#f6d2b8', hair: '#7a4426', style: 'buns', iris: '#6b3d22', top: TOPS.tee, bottom: '#3a4fd8', long: 1, shoe: '#ffffff', lashes: 1, female: 1 });
+export const girl = () => buildPerson({ child: 1, skin: '#f6d2b8', hair: '#7a4426', style: 'pigtails', bangs: 1, iris: '#6b3d22', top: TOPS.tee, bottom: '#3a4fd8', long: 1, shoe: '#ffffff', lashes: 1, female: 1 });
 
 // —— night skyline backdrop (canvas) used behind windows ——
 function skylineTex(dawn = false) {
@@ -108,6 +108,7 @@ export function buildRoom(o = {}) {
   const top = mesh(K.roundBox(1.2, .05, .6, .015), wood); top.position.y = .62; desk.add(top);
   for (const [x, z] of [[-.55, -.25], [.55, -.25], [-.55, .25], [.55, .25]]) { const l = mesh(new THREE.CylinderGeometry(.025, .02, .6, 10), wood); l.position.set(x, .3, z); desk.add(l); }
   const chair = new THREE.Group(); chair.position.set(.7, 0, -1.78); s.add(chair);
+  const cushion = mesh(K.roundBox(.34, .05, .32, .035), M(RED, { roughness: .9, sheen: .8, sheenColor: new THREE.Color('#ffb0b8') })); cushion.position.y = .42; chair.add(cushion);
   const seat = mesh(K.roundBox(.4, .04, .38, .015), M(BLUE, { roughness: .5 })); seat.position.y = .36; chair.add(seat);
   const backR = mesh(K.roundBox(.4, .4, .04, .015), M(BLUE, { roughness: .5 })); backR.position.set(0, .6, -.18); chair.add(backR);
   for (const [x, z] of [[-.17, -.16], [.17, -.16], [-.17, .16], [.17, .16]]) { const l = mesh(new THREE.CylinderGeometry(.018, .018, .36, 8), wood); l.position.set(x, .18, z); chair.add(l); }
@@ -118,7 +119,34 @@ export function buildRoom(o = {}) {
   const bulb = mesh(new THREE.SphereGeometry(.03, 12, 8), glow('#fff1c8', 1.5)); bulb.position.set(-.1, .3, 0); lamp.add(bulb);
   const lampL = new THREE.PointLight('#ffcf8a', 1.0, 2.6, 1.8); lampL.position.set(1.0, .9, -1.3); s.add(lampL);
   const L = K.letter(); L.mesh.rotation.x = -Math.PI / 2; L.mesh.position.set(.62, .648, -1.22); s.add(L.mesh);
-  const pencil = mesh(new THREE.CylinderGeometry(.006, .006, .15, 8), M(RED, { roughness: .4 }));
+  // pencil: origin at the graphite tip, axis +y — blue hex body, red eraser, sharpened wood cone
+  const pencil = new THREE.Group();
+  { const body = mesh(new THREE.CylinderGeometry(.0065, .0065, .12, 6), M(BLUE, { roughness: .35, clearcoat: .6 })); body.position.y = .022 + .06; pencil.add(body);
+    const cone = mesh(new THREE.ConeGeometry(.0065, .02, 6, 1, true), M('#e8c79a', { roughness: .8 })); cone.rotation.x = Math.PI; cone.position.y = .012; pencil.add(cone);
+    const lead = mesh(new THREE.ConeGeometry(.0024, .006, 8), M('#2a2a30', { roughness: .4 })); lead.rotation.x = Math.PI; lead.position.y = .003; pencil.add(lead);
+    const fer = mesh(new THREE.CylinderGeometry(.0068, .0068, .01, 12), M('#d9d9e0', { metalness: .8, roughness: .3 })); fer.position.y = .147; pencil.add(fer);
+    const er = mesh(new THREE.CylinderGeometry(.0064, .0064, .012, 12), M(RED, { roughness: .7 })); er.position.y = .158; pencil.add(er); }
+  s.add(pencil);
+  // cocoa mug with marshmallows and steam; a candy cane
+  const mug = new THREE.Group(); mug.position.set(.24, .645, -1.22); s.add(mug);
+  { const cup = mesh(new THREE.CylinderGeometry(.045, .04, .1, 32, 1, true), M('#ffffff', { roughness: .25, clearcoat: 1, side: THREE.DoubleSide })); cup.position.y = .05; mug.add(cup);
+    const bot = mesh(new THREE.CircleGeometry(.04, 24), M('#ffffff', { roughness: .3 })); bot.rotation.x = -Math.PI / 2; bot.position.y = .002; mug.add(bot);
+    const band = mesh(new THREE.CylinderGeometry(.0455, .0445, .02, 32, 1, true), M(RED, { roughness: .4, clearcoat: .8 })); band.position.y = .06; mug.add(band);
+    const coc = mesh(new THREE.CircleGeometry(.043, 24), M('#5a2e1c', { roughness: .2, clearcoat: 1 })); coc.rotation.x = -Math.PI / 2; coc.position.y = .085; mug.add(coc);
+    for (let i = 0; i < 4; i++) { const mm = mesh(new THREE.BoxGeometry(.016, .012, .016), M('#fff6f0', { roughness: .9 })); mm.position.set(Math.cos(i * 1.7) * .02, .09, Math.sin(i * 1.7) * .02); mm.rotation.y = i; mug.add(mm); }
+    const h = mesh(new THREE.TorusGeometry(.025, .007, 10, 20, Math.PI), M('#ffffff', { roughness: .25, clearcoat: 1 })); h.position.set(-.045, .05, 0); h.rotation.z = Math.PI / 2; mug.add(h); }
+  const steamP = new Float32Array(24 * 3), steam = new THREE.Points(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(steamP, 3)), new THREE.PointsMaterial({ map: K.dotTex(), size: .1, transparent: true, opacity: .08, depthWrite: false, color: '#fff4e8' }));
+  steam.position.copy(mug.position); s.add(steam);
+  const cane = new THREE.Group(); cane.position.set(.36, .652, -1.08); cane.rotation.set(Math.PI / 2, 0, .5); s.add(cane);
+  { const ct = K.ctex(64, 16, (c, w, h) => { c.fillStyle = '#ffffff'; c.fillRect(0, 0, w, h); c.fillStyle = RED; for (let i = 0; i < 8; i++) { c.beginPath(); c.moveTo(i * 8, 0); c.lineTo(i * 8 + 4, 0); c.lineTo(i * 8 + 8, h); c.lineTo(i * 8 + 4, h); c.fill(); } }); ct.wrapS = ct.wrapT = THREE.RepeatWrapping; ct.repeat.set(1, 6);
+    const cm = M('#ffffff', { map: ct, roughness: .25, clearcoat: 1 }); const st = mesh(new THREE.CylinderGeometry(.007, .007, .12, 10), cm); st.position.y = -.06; cane.add(st);
+    const hk = mesh(new THREE.TorusGeometry(.02, .007, 10, 16, Math.PI), cm); hk.position.x = .02; cane.add(hk); }
+  // warm light cone under the lamp shade + dust motes drifting in it
+  const coneT = K.ctex(8, 128, (c, w, h) => { const g = c.createLinearGradient(0, 0, 0, h); g.addColorStop(0, 'rgba(255,214,150,0)'); g.addColorStop(.25, 'rgba(255,214,150,.55)'); g.addColorStop(1, 'rgba(255,214,150,.0)'); c.fillStyle = g; c.fillRect(0, 0, w, h); });
+  const beam = new THREE.Mesh(new THREE.ConeGeometry(.2, .42, 32, 1, true), new THREE.MeshBasicMaterial({ map: coneT, transparent: true, opacity: .16, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false }));
+  { const a = new THREE.Vector3(1.04, .97, -1.42), b = new THREE.Vector3(.86, .645, -1.36), d = b.clone().sub(a); beam.position.copy(a).addScaledVector(d, .5); beam.quaternion.setFromUnitVectors(new THREE.Vector3(0, -1, 0), d.normalize()); beam.scale.y = a.distanceTo(b) / .42; }
+  s.add(beam);
+  const motes = new K.Snow(70, { x0: .55, x1: 1.2, y0: .66, y1: 1.15, z0: -1.65, z1: -1.1 }, .012, 33, .06); motes.obj.material.color = new THREE.Color('#ffd89a'); motes.obj.material.opacity = .7; s.add(motes.obj);
   // rug
   const rugT = ctex(512, 512, (c, w, h) => { c.fillStyle = BLUE; c.beginPath(); c.arc(256, 256, 256, 0, TAU); c.fill(); c.strokeStyle = '#ffffff'; c.lineWidth = 14; c.beginPath(); c.arc(256, 256, 200, 0, TAU); c.stroke(); c.fillStyle = RED; c.beginPath(); c.arc(256, 256, 150, 0, TAU); c.fill(); });
   const rug = mesh(new THREE.CircleGeometry(1.1, 48), M('#ffffff', { map: rugT, roughness: 1, sheen: 1, sheenColor: new THREE.Color('#ffffff') }), false); rug.rotation.x = -Math.PI / 2; rug.position.set(-.3, .005, .2); s.add(rug);
@@ -146,10 +174,12 @@ export function buildRoom(o = {}) {
   const flash = new THREE.PointLight('#ff3050', 0, 8, 1); flash.position.set(.7, 2, -3.2); s.add(flash);
   const snowIn = new K.Snow(120, { x0: .5, x1: 1.6, y0: 1.0, y1: 2.4, z0: -2.45, z1: -1.4 }, .025, 13, .9); snowIn.obj.visible = false; s.add(snowIn.obj);
   return {
-    scene: s, tree, vent, curtains, L, pencil, chair, clock: { hHour, hMin }, doorG, doorBulbs, porchSnow, outSnow, fireworks, flash, lampL, bulb, snowIn, backdrop, night, dawn,
+    scene: s, tree, vent, curtains, L, pencil, chair, cushion, beam, motes, steam, mug, clock: { hHour, hMin }, doorG, doorBulbs, porchSnow, outSnow, fireworks, flash, lampL, bulb, snowIn, backdrop, night, dawn,
     update(t, wind = 0) {
       tree.bulbs.update(t); doorBulbs.update(t + 1); outSnow.update(t, wind * 2); porchSnow.update(t + 3); snowIn.update(t, wind * 2);
-      tree.light.intensity = 2.3 + Math.sin(t * 3) * .3;
+      tree.light.intensity = 2.3 + Math.sin(t * 3) * .3; motes.update(t * .1); beam.visible = motes.obj.visible = lampL.intensity > .1;
+      for (let i = 0; i < 24; i++) { const u = ((t * .35 + i / 24) % 1); steamP[i * 3] = Math.sin(t * 1.3 + i * 2.1) * .015 * (1 + u * 2); steamP[i * 3 + 1] = .1 + u * .22; steamP[i * 3 + 2] = Math.cos(t * 1.1 + i * 1.7) * .012 * (1 + u * 2); }
+      steam.geometry.attributes.position.needsUpdate = true;
       curtains.forEach((cm, j) => { const p = cm.geometry.attributes.position, b = cm.userData.base; for (let i = 0; i < p.count; i++) { const x = b[i * 3], y = b[i * 3 + 1], k = (1.1 - y) / 2.2; p.setZ(i, Math.sin(x * 18 + j) * .03 + Math.sin(t * 3 + y * 3 + j) * wind * .12 * k + wind * .2 * k * k); } p.needsUpdate = true; cm.geometry.computeVertexNormals(); });
     }
   };

@@ -98,6 +98,21 @@ function makeLeg(side, o) {
   return { root: hip, set([fwd, bend]) { hip.rotation.set(-fwd, 0, side * .03); kn.rotation.x = bend; foot.rotation.x = -bend * .4 + fwd * .3; } };
 }
 
+// —— reach: put a hand at a world point (coordinate descent from a fixed guess, so every frame
+// solves the same way and the motion stays smooth). Call after the pose and scene.updateMatrixWorld().
+const _hp = new THREE.Vector3();
+export function reach(ch, i, target, guess, open = 0, lim = [[-.6, 3.1], [-1.2, 2.6], [0, 2.6]]) {
+  const arm = ch.arms[i]; let x = guess.slice(), step = .25;
+  const err = v => { arm.set(v, open); arm.root.updateMatrixWorld(true); arm.hand.getWorldPosition(_hp); let e = _hp.distanceToSquared(target); for (let j = 0; j < 3; j++) e += 2e-4 * (v[j] - guess[j]) ** 2; return e; };
+  let e = err(x);
+  for (let it = 0; it < 90 && step > .002; it++) {
+    let best = null;
+    for (let j = 0; j < 3; j++) for (const d of [step, -step]) { const y = x.slice(); y[j] = Math.min(lim[j][1], Math.max(lim[j][0], y[j] + d)); const ey = err(y); if (ey < e) { e = ey; best = y; } }
+    if (best) x = best; else step *= .5;
+  }
+  arm.set(x, open); arm.root.updateMatrixWorld(true); return x;
+}
+
 // —— shared body driver ——
 function driver(root, body, neck, headG, parts) {
   return p => {
@@ -201,7 +216,7 @@ export function buildNika() {
     brows.forEach((b, i) => { const s = i ? 1 : -1; b.visible = false; b.position.y = .45 + p.brows * .025; b.rotation.z = Math.PI / 2 + s * (p.brows * .25 - (p.sad || 0) * .35); });
   };
   const pose = driver(root, body, neck, headG, { arms, legs, eyes, face });
-  return { root, pose, hands: () => arms.map(a => a.hand), head: headG };
+  return { root, pose, arms, hands: () => arms.map(a => a.hand), head: headG };
 }
 function starGeo(r, r2, d) { const s = new THREE.Shape(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r2 : r; i ? s.lineTo(Math.cos(a) * rr, -Math.sin(a) * rr) : s.moveTo(Math.cos(a) * rr, -Math.sin(a) * rr); } return new THREE.ExtrudeGeometry(s, { depth: d, bevelEnabled: false }); }
 function mulberry(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
@@ -240,11 +255,20 @@ export function buildPerson(o) {
   const eyes = [-1, 1].map(s => { const e = makeEye(r * (child ? .3 : .23), o.iris || '#6a3b1f', skin, o.lashes ? s : 0); e.g.position.set(s * r * .37, hc.y + r * .06, r * .74); e.g.rotation.y = s * .25; headG.add(e.g); return e; });
   const brows = [-1, 1].map(s => { const b = mesh(limbGeo(r * .045, r * .3), M(o.brow || o.hair, { roughness: .8 }), false); b.rotation.z = Math.PI / 2; b.position.set(s * r * .38, hc.y + r * .44, r * .88); headG.add(b); return b; });
   // hair
-  const hairM = M(o.hair, { roughness: .45, sheen: .8, sheenColor: new THREE.Color('#ffffff'), sheenRoughness: .35, clearcoat: .2 });
+  const hairT = hairTex(o.hair);
+  const hairM = new THREE.MeshPhysicalMaterial({ color: '#ffffff', map: hairT, bumpMap: hairT, bumpScale: 1.5, roughness: .42, sheen: .9, sheenColor: new THREE.Color('#ffe2c4'), sheenRoughness: .3, clearcoat: .25, clearcoatRoughness: .35 });
   const cap = mesh(new THREE.SphereGeometry(r * 1.07, 48, 24, 0, TAU, 0, Math.PI * .58), hairM); cap.position.copy(hc); cap.rotation.x = -.38; headG.add(cap);
   const fringe = mesh(new THREE.SphereGeometry(r * 1.06, 40, 12, Math.PI * .25, Math.PI * .5, Math.PI * .22, Math.PI * .18), hairM); fringe.position.copy(hc); headG.add(fringe);
   const sideL = (s, len, w) => { const g = mesh(limbGeo(r * w, len), hairM); g.position.set(s * r * .85, hc.y + r * .25, -r * .2); g.rotation.z = s * .08; headG.add(g); return g; };
   const st = o.style;
+  if (o.bangs) { fringe.visible = false; // sculpted fringe: a few broad, flat locks swept to one side
+    [[-.62, .5, .5], [-.22, .62, .58], [.2, .58, .55], [.58, .46, .46]].forEach(([a, y, w]) => { const l = mesh(sph(r * w, 24, 16), hairM); l.scale.set(1, .62, .4); l.position.set(Math.sin(a) * r * .86, hc.y + r * y, Math.cos(a) * r * .8); l.rotation.set(-.55, a, -.45 - a * .3); headG.add(l); }); }
+  if (st === 'pigtails') for (const s of [-1, 1]) { // two bunches tied with red bobbles, swinging from behind the ears
+    const pt = new THREE.Group(); pt.position.set(s * r * .9, hc.y + r * .12, -r * .3); headG.add(pt);
+    const tie = mesh(sph(r * .13, 16, 12), M('#e3243a', { roughness: .35, clearcoat: .6 })); pt.add(tie);
+    const tl = new THREE.Group(); tl.rotation.z = s * .35; pt.add(tl);
+    for (let k = 0; k < 5; k++) { const b = mesh(sph(r * (.27 - k * .035), 20, 14), hairM); b.scale.set(1, 1.35, .9); b.position.set(s * r * k * .05, -r * (.22 + k * .26), -r * k * .03); tl.add(b); }
+    (root.userData.tails = root.userData.tails || []).push(tl); }
   if (st === 'buns') for (const s of [-1, 1]) { const b = mesh(sph(r * .38, 24, 18), hairM); b.position.set(s * r * .82, hc.y + r * .38, -r * .45); headG.add(b); const bow = mesh(new THREE.TorusGeometry(r * .17, r * .07, 8, 16), M('#e3243a', { roughness: .5 })); bow.position.set(s * r * .88, hc.y + r * .2, -r * .2); bow.rotation.y = s * 1.1; headG.add(bow); }
   if (st === 'ponytail' || st === 'braid') { const pt = new THREE.Group(); pt.position.set(0, hc.y + r * .55, -r * .85); headG.add(pt); const tie = mesh(new THREE.TorusGeometry(r * .14, r * .06, 8, 16), M(o.tie || '#e3243a', { roughness: .5 })); pt.add(tie);
     if (st === 'braid') for (let i = 0; i < 6; i++) { const b = mesh(sph(r * (.22 - i * .015), 16, 12), hairM); b.position.set(0, -r * (.15 + i * .3), -r * .1 - i * r * .02); pt.add(b); }
@@ -257,7 +281,24 @@ export function buildPerson(o) {
   root.scale.setScalar(S);
   const face = p => { mouthG.scale.set(1, .2 + Math.max(0, p.mouth) * .9, 1); brows.forEach((b, i) => { const s = i ? 1 : -1; b.position.y = hc.y + r * (.44 + p.brows * .1); b.rotation.z = Math.PI / 2 + s * (p.brows * .15 - (p.sad || 0) * .3); }); };
   const pose = driver(root, body, neck, headG, { arms, legs, eyes, face });
-  return { root, pose, hands: () => arms.map(a => a.hand), head: headG };
+  return { root, pose, arms, hands: () => arms.map(a => a.hand), head: headG };
+}
+
+// hair: base colour with fine strands running crown → ends (sphere UV v), used as colour and bump
+const _hairT = new Map();
+function hairTex(col) {
+  if (!_hairT.has(col)) _hairT.set(col, hairTex0(col)); return _hairT.get(col);
+}
+function hairTex0(col) {
+  return canvasTex(512, 512, (c, w, h) => {
+    c.fillStyle = col; c.fillRect(0, 0, w, h); const R = mulberry(9), base = new THREE.Color(col);
+    for (let i = 0; i < 900; i++) {
+      const x = R() * w, k = R(), l = base.clone().offsetHSL(0, 0, (k - .5) * .16);
+      c.strokeStyle = '#' + l.getHexString(); c.globalAlpha = .55; c.lineWidth = .8 + R() * 1.6;
+      c.beginPath(); c.moveTo(x, 0); c.bezierCurveTo(x + (R() - .5) * 20, h * .35, x + (R() - .5) * 30, h * .7, x + (R() - .5) * 26, h); c.stroke();
+    }
+    c.globalAlpha = 1;
+  });
 }
 
 // painters for tops

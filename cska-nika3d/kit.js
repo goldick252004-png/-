@@ -155,6 +155,7 @@ export function building(w, h, d, col, seed, o = {}) {
 }
 
 // —— letter (paper) with handwriting revealed by `k` ——
+const clamp01 = k => Math.min(1, Math.max(0, k));
 export const LETTER = ['Дедушка Мороз,', 'хочу, чтобы ЦСКА', 'встретил Новый год', 'со мной!'];
 export function letter() {
   const c = document.createElement('canvas'); c.width = 768; c.height = 1024; const x = c.getContext('2d');
@@ -173,7 +174,14 @@ export function letter() {
     tex.needsUpdate = true;
   };
   draw(0);
-  return { mesh: m, draw };
+  // where the pen is for progress k, in the plane's local coords (for the pencil tip)
+  const cursor = k => {
+    x.font = '700 96px Caveat'; const total = LETTER.join('').length; let n = Math.floor(clamp01(k) * total), li = 0;
+    while (li < LETTER.length - 1 && n > LETTER[li].length) { n -= LETTER[li].length; li++; }
+    n = Math.min(n, LETTER[li].length); const px = 60 + x.measureText(LETTER[li].slice(0, n)).width, py = 230 + li * 184 - 22;
+    return new THREE.Vector3((px / 768 - .5) * .21, (.5 - py / 1024) * .28, .002);
+  };
+  return { mesh: m, draw, cursor };
 }
 
 // —— sky dome gradient ——

@@ -1,6 +1,6 @@
 // «Письмо Деду Морозу» — choreography. Each scene: a, b (seconds), set, shots (camera), update(t, lt).
 import * as THREE from 'three';
-import { buildNika, buildPerson, defaultPose, TOPS } from './chars.js';
+import { buildNika, buildPerson, defaultPose, TOPS, reach } from './chars.js';
 import * as K from './kit.js';
 import * as SETS from './sets.js';
 import { clamp, lerp, seg, ss, eio, eo, ei, back, track, monotone, mulberry, env } from './lib.js';
@@ -36,7 +36,6 @@ export async function buildFilm() {
   const nRoom = buildNika(); room.scene.add(nRoom.root);
   const team = SETS.PLAYERS.map((_, i) => { const p = SETS.player(i); room.scene.add(p.root); return p; });
   const teamGifts = team.map((_, i) => { const g = K.present(.26, .2, .22, [RED, BLUE, GOLD, '#ffffff'][i % 4], i % 2 ? GOLD : RED); room.scene.add(g); return g; });
-  room.pencil.rotation.z = .3; sonya.hands()[1].add(room.pencil); room.pencil.position.set(0, -.04, .02); room.pencil.rotation.set(1.2, 0, .3);
   const nArena = buildNika(); arena.scene.add(nArena.root);
   const sparkA = new K.Sparkles(120, '#ffd36a', 11, .09); arena.scene.add(sparkA.obj);
   const nStreet = buildNika(); street.scene.add(nStreet.root);
@@ -61,22 +60,23 @@ export async function buildFilm() {
     a: 0, b: 11, set: room, fadeOut: false,
     caps: [[.5, 3.2, '30 декабря']],
     shots: [
-      shot(0, 3.4, [[0, [-.9, 1.7, 3.0, .2, 1.0, -1.6, 40]], [3.4, [.75, 1.2, .3, .65, .85, -1.55, 33]]], [[0, [-.4, 1.6, 3.2, .2, 1.1, -1.6, 62]], [3.4, [.72, 1.2, .3, .66, .9, -1.55, 54]]]),
-      shot(3.4, 6.6, [[3.4, [.62, 1.02, -1.12, .62, .66, -1.38, 36]], [6.6, [.62, .98, -1.16, .62, .66, -1.38, 33]]], [[3.4, [.62, 1.1, -1.24, .62, .66, -1.38, 52]], [6.6, [.62, 1.06, -1.26, .62, .66, -1.38, 48]]]),
+      shot(0, 3.4, [[0, [-.9, 1.7, 3.0, .2, 1.0, -1.6, 40]], [1.2, [.2, 1.35, 1.6, .55, .95, -1.6, 38]], [3.4, [1.22, .98, -.62, .7, .86, -1.66, 32]]], [[0, [-.4, 1.6, 3.2, .2, 1.1, -1.6, 62]], [1.2, [.3, 1.35, 1.7, .55, 1.0, -1.6, 58]], [3.4, [1.2, 1.0, -.55, .7, .86, -1.66, 50]]]),
+      shot(3.4, 6.6, [[3.4, [.9, 1.04, -1.02, .6, .665, -1.4, 28]], [6.6, [.86, 1.0, -1.06, .6, .67, -1.42, 25]]], [[3.4, [.86, .98, -.92, .62, .74, -1.46, 46]], [6.6, [.82, .95, -.98, .62, .75, -1.48, 42]]]),
       shot(6.6, 9.4, [[6.6, [2.0, 1.25, .1, .7, 1.0, -1.9, 38]], [9.4, [1.9, 1.3, 0, .55, 1.1, -2.1, 36]]], [[6.6, [2.0, 1.25, .2, .55, 1.0, -1.9, 60]], [9.4, [1.9, 1.3, .1, .5, 1.1, -2.1, 56]]]),
       shot(9.4, 11, [[9.4, [.35, 1.3, -.4, .8, 1.55, -2.5, 42]], [11, [.4, 1.35, -.7, .95, 1.9, -2.6, 38]]], [[9.4, [.35, 1.3, -.4, .8, 1.6, -2.5, 64]], [11, [.4, 1.35, -.7, .95, 1.95, -2.6, 58]]]),
     ],
     update(t, lt) {
-      room.backdrop.material.map = room.night; room.lampL.intensity = 1.0; room.bulb.visible = true;
+      room.backdrop.material.map = room.night; room.lampL.intensity = .5; room.bulb.visible = true;
       const wind = smoothW(lt, 9.6, 10.9);
       room.update(t, wind); room.snowIn.obj.visible = wind > .05;
       room.vent.rotation.y = -.25 - wind * .8;
       // Соня
       const p = P({ x: .7, z: -1.72, rotY: 0, mouth: .45, head: [0, .35, 0] });
       const sit = 1 - ss(seg(lt, 6.6, 7.1));
-      p.legL = p.legR = [1.45 * sit, 1.45 * sit]; p.y = -.04 * sit;
+      p.legL = p.legR = [1.45 * sit, 1.45 * sit]; p.y = .08 * sit; room.cushion.visible = true;
       p.armL = [.15, 1.0 * sit + .1, 1.2 * sit + .2]; p.armR = [.2, 1.1 * sit, .9 * sit + .2];
-      if (lt < 6.4) { const w = Math.sin(t * 9) * .08 * (lt < 5.2 ? 1 : 0), up = ss(seg(lt, 5.2, 5.6)); p.armR = [.2 + w + up * .25, 1.1 - up * .5, .9 + w * 1.5]; p.head = [Math.sin(t * .8) * .1, .4, .1]; p.look = [Math.sin(t * 2) * .3, .6]; p.mouth = .25; }
+      const writing = lt < 6.6;
+      if (writing) { p.head = [Math.sin(t * .8) * .08 + .1, .3, .12 + Math.sin(t * .5) * .05]; p.look = [-.15 + Math.sin(t * 2) * .12, .7]; p.mouth = lt > 6.0 ? .9 : .3; if (lt > 6.0) { p.head = [.15, .05, .1]; p.look = [0, .1]; } }
       const L = room.L, k = lt < 3.4 ? lt / 3.4 * .5 : .5 + .5 * clamp((lt - 3.4) / 2.6);
       L.draw(k);
       if (lt >= 7.1) {
@@ -90,11 +90,22 @@ export async function buildFilm() {
       idle(p, t, 1); sonya.pose(p);
       room.scene.updateMatrixWorld();
       // letter: desk → hand → sill → wind
-      if (lt < 6.8) { L.mesh.position.set(.62, .664, -1.38); L.mesh.rotation.set(-Math.PI / 2, 0, 0); }
+      if (lt < 6.8) { L.mesh.position.set(.62, .664, -1.38); L.mesh.rotation.set(-Math.PI / 2, 0, -.1); }
       else if (lt < 8.6) { const h = wpos(sonya.hands()[1]); L.mesh.position.set(h.x, h.y - .02, h.z); L.mesh.rotation.set(-1.2, p.rotY, 0); }
       else if (lt < 9.8) { L.mesh.position.set(.55, 1.025, -2.36); L.mesh.rotation.set(-Math.PI / 2, 0, .2); }
       else { const u = clamp((lt - 9.8) / 1.2), e = eo(u); L.mesh.position.set(lerp(.55, 1.3, e), lerp(1.0, 2.45, e) + Math.sin(u * 9) * .04, lerp(-2.36, -4.2, ei(u))); L.mesh.rotation.set(-Math.PI / 2 + u * 3, u * 5, .2 + u * 6); }
-      room.pencil.visible = lt < 6.6; room.chair.position.set(.7, 0, -1.78); room.chair.rotation.y = 0;
+      // pencil: the tip follows the line being written; the hand holds it (IK), the other hand steadies the page
+      if (writing) {
+        L.mesh.updateMatrixWorld(); const pen = room.pencil, up = lt > 6.0 ? ss(seg(lt, 6.0, 6.35)) : 0;
+        const tip = L.mesh.localToWorld(L.cursor(k)); tip.y += .0015 + Math.max(0, Math.sin(t * 31)) * .006 + up * .05; tip.x += Math.sin(t * 23) * .002;
+        const ax = new THREE.Vector3(.55, 1, -.22).normalize(); pen.position.copy(tip); pen.quaternion.setFromUnitVectors(V3(0, 1, 0), ax);
+        const gripOff = ax.clone().multiplyScalar(.075).add(V3(.012, .015, 0));
+        reach(sonya, 1, tip.clone().add(gripOff), [.25, 1.2, .9], .2);
+        pen.position.copy(wpos(sonya.hands()[1])).sub(gripOff); // the pencil stays in the fist even where the reach falls short
+        reach(sonya, 0, V3(.47, .7, -1.36), [.15, 1.1, 1.2], 1);
+        pen.visible = true;
+      } else { const pen = room.pencil; pen.position.set(.84, .652, -1.3); pen.quaternion.setFromEuler(new THREE.Euler(0, .4, Math.PI / 2)); pen.visible = true; }
+      room.chair.position.set(.7, 0, -1.78); room.chair.rotation.y = 0;
       nRoom.root.visible = false; team.forEach(m => m.root.visible = false); teamGifts.forEach(g => g.visible = false);
       room.doorG.rotation.y = 0;
       setClock(room, 21, 30);
@@ -122,23 +133,36 @@ export async function buildFilm() {
     return [cp.x, cp.y, cp.z, a.x, a.y, a.z];
   }
   // ═══════════ S3 · Ника (19–28) ═══════════
+  const DRB = 1.6, BR = .123, BS = BR / .095; // bounces per second, ball radius, scale of the arena ball mesh
+  const nikaAt = lt => { const e = eo(clamp(lt / 2.6)); const x = lerp(-1.4, 0, e), z = lerp(-.55, 0, e); const r = lerp(Math.atan2(1.4, .55) * .55, 0, ss(clamp((lt - 1.4) / 1.2))); return [x, z, r]; };
+  const blobT = K.ctex(64, 64, c => { const g = c.createRadialGradient(32, 32, 0, 32, 32, 32); g.addColorStop(0, 'rgba(0,0,10,.9)'); g.addColorStop(1, 'rgba(0,0,10,0)'); c.fillStyle = g; c.fillRect(0, 0, 64, 64); });
+  const blob = (r, o) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(r * 2, r * 2), new THREE.MeshBasicMaterial({ map: blobT, transparent: true, opacity: o, depthWrite: false })); m.rotation.x = -Math.PI / 2; arena.scene.add(m); return m; };
+  const ballShadow = blob(.16, .5), nikaShadow = blob(.42, .45); nikaShadow.scale.set(1, .8, 1);
+  const nikaSpot = new THREE.SpotLight('#fff0d8', 40, 16, .32, .75, 1.4); nikaSpot.position.set(1.8, 7.5, 4.5); arena.scene.add(nikaSpot, nikaSpot.target);
   const letterPathA = new THREE.CatmullRomCurve3([V3(0, 9.6, -24.6), V3(-1.5, 8, -16), V3(1.2, 5.5, -8), V3(-.6, 3.2, -3), V3(.3, 1.9, -.6), V3(0, 1.2, .38)]);
   S.push({
     a: 19, b: 28, set: arena, caps: [[23.5, 26.7, '…прямо к Нике!']],
     shots: [
-      shot(19, 21.7, [[19, [3.2, 1.5, 6.5, 0, 1.0, 0, 36]], [21.7, [2.6, 1.4, 5.6, 0, 1.0, 0, 34]]], [[19, [2.4, 1.5, 6.5, 0, 1.2, 0, 58]], [21.7, [2.0, 1.4, 5.6, 0, 1.2, 0, 54]]]),
+      shot(19, 20.4, [[19, [3.4, 1.6, 6.6, -.6, .9, -.3, 36]], [20.4, [2.6, 1.25, 4.9, -.4, .8, -.2, 34]]], [[19, [2.6, 1.6, 6.6, -.6, 1.1, -.3, 58]], [20.4, [2.0, 1.25, 4.9, -.4, 1.0, -.2, 54]]]),
+      shot(20.4, 21.7, [[20.4, [0, 0, 0, 0, 0, 0, 33]], [21.7, [0, 0, 0, 0, 0, 0, 33]]], [[20.4, [0, 0, 0, 0, 0, 0, 52]], [21.7, [0, 0, 0, 0, 0, 0, 52]]], (lt, V) => { const [x, z] = nikaAt(lt); return V ? [x + 1.5, 1.0, z + 2.05, x + .12, .85, z] : [x + 1.85, 1.15, z + 2.55, x + .1, .9, z]; }),
       shot(21.7, 23.4, [[21.7, [2.8, 1.0, 4.6, 0, 6, -12, 46]], [23.4, [2.2, 1.1, 3.8, 0, 1.4, 0, 40]]], [[21.7, [2.4, 1.0, 4.6, 0, 6, -12, 68]], [23.4, [1.8, 1.1, 3.8, 0, 1.4, 0, 62]]]),
       shot(23.4, 25.4, [[23.4, [.5, 1.6, 1.35, 0, 1.45, 0, 30]], [25.4, [.4, 1.58, 1.2, 0, 1.45, 0, 28]]], [[23.4, [.4, 1.55, 1.5, 0, 1.4, 0, 50]], [25.4, [.35, 1.55, 1.35, 0, 1.4, 0, 48]]]),
       shot(25.4, 28, [[25.4, [0, 1.3, 3.6, 0, 1.15, 0, 36]], [28, [0, 1.25, 3.2, 0, 1.2, 0, 36]]], [[25.4, [0, 1.3, 3.8, 0, 1.3, 0, 58]], [28, [0, 1.25, 3.4, 0, 1.3, 0, 58]]]),
     ],
     update(t, lt) {
-      arena.update(t); arena.sled.root.visible = false;
+      arena.update(t); arena.sled.root.visible = false; nikaSpot.visible = true; nikaSpot.intensity = lerp(40, 10, ss(seg(lt, 2.4, 3.6))); ballShadow.visible = nikaShadow.visible = true;
       const p = P({ rotY: 0, mouth: .8 });
-      // dribbling
-      let bx = .32, by = .1 + Math.abs(Math.sin(t * Math.PI * 1.6)) * .75, bz = .3;
-      if (lt < 2.6) { const d = Math.abs(Math.sin(t * Math.PI * 1.6)); p.armR = [.25, .6, .5 + (1 - d) * .4]; p.head = [0, .25, 0]; p.look = [.3, .5]; p.lean = .1; p.legL = [.2, .3]; p.legR = [-.1, .2]; }
-      else { const u = clamp((lt - 2.6) / 2); bx = .32 + u * 2.4; bz = .3 + u * 1.2; by = .1 + Math.abs(Math.sin(u * 7)) * .3 * (1 - u); }
-      arena.ball.position.set(bx, by, bz); arena.ball.rotation.set(t * 3, 0, t * 2);
+      // dribbling on the move: two steps per bounce, the hand meets the ball at the top of every bounce
+      const [nx, nz, nr] = nikaAt(lt), walkK = 1 - ss(seg(lt, 1.9, 2.6)); p.x = nx; p.z = nz; p.rotY = nr;
+      if (lt < 2.6) { walk(p, lt * DRB * Math.PI, .55 * walkK); p.head = [0, .3, 0]; p.look = [.25, .55]; p.lean = .1; p.mouth = .6; }
+      const ph = lt * DRB, decay = lt < 2.6 ? 1 : Math.exp(-(lt - 2.6) * 1.1), hTop = .6;
+      const off = new THREE.Vector3(.3, 0, .24).applyAxisAngle(V3(0, 1, 0), nr), drift = lt < 2.6 ? 0 : ss(seg(lt, 2.6, 5.2));
+      let bx = nx + off.x + drift * 2.2, bz = nz + off.z + drift * 1.1, by = BR + (hTop - BR) * Math.abs(Math.cos(Math.PI * ph)) * decay;
+      if (lt > 5.2) by = BR;
+      const sq = clamp(1 - (by - BR) / .05);
+      arena.ball.position.set(bx, by, bz); arena.ball.rotation.set(lt * 4 + drift * 9, 0, lt * 2); arena.ball.scale.set(BS * (1 + sq * .1), BS * (1 - sq * .16), BS * (1 + sq * .1));
+      ballShadow.position.set(bx, .006, bz); ballShadow.scale.setScalar(.9 + (by - BR) * .9); ballShadow.material.opacity = .5 - (by - BR) * .45;
+      nikaShadow.position.set(nx, .005, nz + .02);
       // letter arrives
       const L = arena.L;
       if (lt < 2.3) L.mesh.visible = false;
@@ -152,6 +176,7 @@ export async function buildFilm() {
       if (lt > 7.0) { const j = hop(lt, 7.2, 7.9, .45); p.y = j; p.squash = lt < 7.2 ? ss(seg(lt, 7.0, 7.2)) * .6 : (lt < 8.1 && lt > 7.9 ? .5 : 0); p.armR = [2.7, .2, .4]; p.armL = [.4, .7, 1.1]; p.handR = 0; }
       idle(p, t, 2); nArena.pose(p);
       arena.scene.updateMatrixWorld();
+      if (lt < 2.6) { const hy = Math.max(by + BR + .045, .5); reach(nArena, 1, V3(bx, hy, bz), [.35, .55, .5], .7); }
       if (lt >= 4.2) { const a = wpos(nArena.hands()[0]), b = wpos(nArena.hands()[1]); L.mesh.position.set((a.x + b.x) / 2, (a.y + b.y) / 2 + .1, (a.z + b.z) / 2 + .02); L.mesh.rotation.set(-.35, 0, 0); if (lt > 7.1) L.mesh.position.copy(b).add(V3(.05, .15, 0)); }
       const head = wpos(nArena.head).add(V3(0, .35, .1)); sparkA.update(t, 19 + 6.4, head, 1.0, 1.6);
     }
@@ -167,7 +192,7 @@ export async function buildFilm() {
       shot(35.2, 40, [[35.2, [0, 0, 0, 0, 0, 0, 40]], [40, [0, 0, 0, 0, 0, 0, 40]]], null, (lt, VV) => { const x = sledX(lt); return VV ? [x + 1.4, 1.8, 8.6, x + 1.6, 1.05, 0] : [x + 1.2, 1.7, 7.2, x + 1.6, .95, 0]; }),
     ],
     update(t, lt) {
-      arena.update(t); arena.L.mesh.visible = false; arena.ball.position.set(5, .1, 3); sparkA.obj.visible = false;
+      arena.update(t); arena.L.mesh.visible = false; arena.ball.position.set(5, .1, 3); arena.ball.scale.setScalar(1); sparkA.obj.visible = false; nikaSpot.visible = false; ballShadow.visible = nikaShadow.visible = false;
       const sl = arena.sled, x = sledX(lt); sl.root.visible = true; sl.root.position.set(x, 0, 0); sl.root.rotation.y = 0;
       sl.bells.forEach((b, i) => { b.position.y = .74 + Math.sin(t * 22 + i) * .015 * (lt > 9.4 ? 1 : .2); });
       arena.gateDoors.forEach((g, i) => { g.rotation.y = (i ? 1 : -1) * 1.4 * ss(seg(lt, 8.8, 10.6)); });
@@ -249,8 +274,9 @@ export async function buildFilm() {
     a: 56, b: 59.5, set: room, caps: [],
     shots: [shot(56, 59.5, [[56, [.75, 1.3, -3.7, .72, 1.12, -2.0, 34]], [59.5, [.74, 1.28, -3.4, .72, 1.12, -2.0, 32]]], [[56, [.75, 1.3, -3.8, .72, 1.12, -2.0, 52]], [59.5, [.74, 1.28, -3.5, .72, 1.12, -2.0, 50]]])],
     update(t, lt) {
-      room.update(t); room.snowIn.obj.visible = false; room.vent.rotation.y = 0; room.L.mesh.visible = false; room.pencil.visible = false;
+      room.update(t); room.snowIn.obj.visible = false; room.vent.rotation.y = 0; room.L.mesh.visible = false; room.pencil.visible = false; room.cushion.visible = true;
       room.lampL.intensity = 0; room.bulb.visible = false;
+      room.cushion.visible = false;
       const p = P({ x: .72, y: .38, z: -2.16, rotY: Math.PI, mouth: .05, sad: 1, head: [.1, .1, .12], look: [.2, .1], armL: [.3, 1.35, 1.3], armR: [.3, 1.35, 1.3], lean: .15 });
       room.chair.position.set(.72, 0, -1.98); room.chair.rotation.y = Math.PI;
       p.blink = Math.max(blinkAt(t, 3), lt > 1.5 && lt < 1.9 ? .8 : 0); p.breath = t * 1.6;
@@ -282,12 +308,12 @@ export async function buildFilm() {
     a: 64, b: 74, set: room, caps: [[64.6, 66.6, 'Динь-дон!'], [68.2, 72.8, 'Желание сбылось!']],
     shots: [
       shot(64, 66.4, [[64, [.2, 1.45, 3.4, -1.0, 1.0, -.8, 40]], [65.2, [.3, 1.42, 3.3, -.7, 1.0, -.5, 40]], [66.4, [.9, 1.35, 2.8, 2.2, 1.0, .9, 40]]], [[64, [0, 1.45, 3.6, -1.1, 1.1, -.8, 62]], [65.2, [.1, 1.42, 3.5, -.8, 1.1, -.5, 62]], [66.4, [.9, 1.35, 3.0, 2.2, 1.1, .9, 62]]]),
-      shot(66.4, 70.5, [[66.4, [.7, 1.2, 1.7, 3.6, 1.2, 1.05, 42]], [70.5, [1.0, 1.2, 1.9, 3.4, 1.2, 1.05, 38]]], [[66.4, [.6, 1.2, 1.8, 3.4, 1.3, 1.05, 64]], [70.5, [.9, 1.2, 2.0, 3.2, 1.3, 1.05, 60]]]),
-      shot(70.5, 74, [[70.5, [1.0, 1.35, 3.2, 2.7, 1.0, 1.0, 38]], [74, [.8, 1.4, 3.6, 2.8, 1.0, .9, 40]]], [[70.5, [1.2, 1.35, 3.4, 2.7, 1.1, 1.0, 60]], [74, [1.0, 1.4, 3.8, 2.8, 1.1, .9, 62]]]),
+      shot(66.4, 70.5, [[66.4, [.7, 1.2, 1.7, 3.6, 1.2, 1.05, 42]], [68.5, [.8, 1.2, 1.75, 3.4, 1.15, 1.05, 40]], [69.4, [.0, 1.45, .82, 2.6, 1.0, .82, 37]], [70.5, [.15, 1.45, .82, 2.6, 1.0, .82, 35]]], [[66.4, [.6, 1.2, 1.8, 3.4, 1.3, 1.05, 64]], [68.5, [.7, 1.2, 1.85, 3.3, 1.25, 1.05, 62]], [69.4, [-.1, 1.1, 1.02, 2.6, 1.0, 1.0, 58]], [70.5, [.1, 1.08, 1.0, 2.6, 1.0, 1.0, 56]]]),
+      shot(70.5, 74, [[70.5, [.15, 1.45, .82, 2.6, 1.0, .82, 35]], [74, [-.75, 1.4, .8, 2.8, 1.05, .8, 40]]], [[70.5, [.1, 1.08, 1.0, 2.6, 1.0, 1.0, 56]], [74, [-.55, 1.2, 1.0, 2.8, 1.1, 1.05, 62]]]),
     ],
     update(t, lt) {
       room.backdrop.material.map = room.night; room.lampL.intensity = 0; room.bulb.visible = false;
-      room.update(t); room.snowIn.obj.visible = false; room.vent.rotation.y = 0; room.L.mesh.visible = false; room.pencil.visible = false;
+      room.update(t); room.snowIn.obj.visible = false; room.vent.rotation.y = 0; room.L.mesh.visible = false; room.pencil.visible = false; room.cushion.visible = true;
       setClock(room, 23, 40 + lt * .5); room.chair.position.set(.7, 0, -1.78); room.chair.rotation.y = 0;
       const open = ss(seg(lt, 2.45, 3.1)); room.doorG.rotation.y = -1.55 * open;
       // Соня
@@ -296,16 +322,34 @@ export async function buildFilm() {
       else { const w = seg(lt, 1.25, 2.4), q = pathAt([[-1.35, -.75], [0, .4], [2.45, 1.05]], eio(w)); p.x = q[0]; p.z = q[1]; p.rotY = lt < 1.25 ? lerp(-2.2, q[2], seg(lt, 1.1, 1.25)) : q[2]; if (w > 0 && w < 1) walk(p, w * 16, 1, .5); p.mouth = .8; p.brows = 1; }
       if (lt > .6 && lt < 1.25) { p.head = [1.6, 0, 0]; p.look = [.8, 0]; p.brows = 1; p.mouth = .5; }
       if (lt > 2.45 && lt < 3.1) { p.armR = [.3, 1.2, .3]; p.rotY = Math.PI / 2; }
+      // side-by-side hug, both facing the room: Соня wraps her arms round Ника's waist, Ника's arm rests on her shoulder
+      const HUG_S = [2.45, .76], HUG_N = [2.6, 1.27];
+      const turn = ss(seg(lt, 4.7, 5.25)), hug = ss(seg(lt, 5.2, 5.7)) * (1 - ss(seg(lt, 7.6, 8.1)));
       if (lt >= 3.1) { p.rotY = Math.PI / 2; p.mouth = 1; p.brows = 1; p.head = [0, -.15, 0]; p.look = [0, -.3];
-        if (lt < 5.0) { p.y = hop(lt, 3.3, 3.8, .16) + hop(lt, 3.8, 4.3, .14) + hop(lt, 4.3, 4.8, .12); p.armL = p.armR = [2.5, .2, .4]; p.handL = p.handR = 1; }
-        else { p.armL = p.armR = [.6, 1.4, .6]; p.head = [0, -.45, 0]; p.blink = 1; p.x = 2.45; } }
+        if (lt < 4.85) { p.y = hop(lt, 3.3, 3.8, .16) + hop(lt, 3.8, 4.3, .14) + hop(lt, 4.3, 4.8, .12); p.armL = p.armR = [2.5, .2, .4]; p.handL = p.handR = 1; }
+        p.rotY = lerp(Math.PI / 2, -Math.PI / 2, turn); p.x = lerp(2.45, HUG_S[0], turn); p.z = lerp(1.05, HUG_S[1], turn);
+        if (lt > 4.7 && lt < 5.25) walk(p, lt * 14, .6);
+        if (lt >= 5.2) { p.side = -.13 * hug; p.head = [-.15 * hug, .05, -.28 * hug + Math.sin(t * 2) * .03]; p.mouth = 1; p.brows = 1; p.look = [.25, .2]; }
+        if (lt >= 7.8) { p.head = [.5 * ss(seg(lt, 7.8, 8.3)), -.1, 0]; p.blink = 0; p.look = [.6, .1]; p.armL = p.armR = [.3, .6, 1.4]; p.handL = p.handR = 1; p.y = hop(lt, 8.4, 8.8, .1) + hop(lt, 8.9, 9.3, .1); } }
+      const sway = Math.sin(t * 2.2) * .04 * hug;
+      if (lt >= 3.1) p.side += sway;
       idle(p, t, 1); sonya.pose(p);
       // Ника + team on the porch, then in
       const n = P({ x: 3.75, z: 1.05, rotY: -Math.PI / 2, mouth: 1 });
       n.armR = [2.4, .1, .8 + Math.sin(t * 9) * .3]; n.handR = 1;
-      if (lt > 4.6) { const k = ss(seg(lt, 4.6, 5.2)); n.x = lerp(3.75, 3.0, k); n.lean = .25 * k; n.y = -.28 * k; n.legL = [.9 * k, 1.6 * k]; n.legR = [-.2 * k, 1.2 * k]; n.armL = n.armR = [.5, 1.3 * k + .1, 1.1]; n.handL = n.handR = 1; n.blink = k > .5 ? 1 : 0; n.head = [0, .2 * k, .15 * k]; }
-      if (lt > 7.2) { const k = ss(seg(lt, 7.2, 7.8)); n.lean = .25 * (1 - k); n.y = -.28 * (1 - k); n.legL = [.9 * (1 - k), 1.6 * (1 - k)]; n.legR = [-.2 * (1 - k), 1.2 * (1 - k)]; n.armR = [2.4 * k, .1, .8]; }
+      if (lt > 4.6) { const w = seg(lt, 4.6, 5.35), q = pathAt([[3.75, 1.05], [3.05, 1.12], HUG_N], eio(w)); n.x = q[0]; n.z = q[1]; if (w > 0 && w < 1) walk(n, w * 9, .7); n.armR = [.3, .3, .5]; n.handR = .5; }
+      if (lt >= 5.2) { n.head = [-.3 * hug, .18 * hug, .3 * hug]; n.side = .06 * hug + sway; n.blink = hug > .5 ? 1 : 0; n.mouth = 1; n.earDrop = .15 * hug; }
+      if (lt > 7.6) { const k = ss(seg(lt, 7.6, 8.1)); n.armR = [2.4 * k + .3 * (1 - k), .1, .8 + Math.sin(t * 9) * .3 * k]; n.handR = 1; n.head = [-.3 * hug + .2 * k, .18 * hug, .3 * hug]; n.look = [.5 * k, 0]; }
       idle(n, t, 2); nRoom.root.visible = true; nRoom.pose(n);
+      if (hug > 0) {
+        room.scene.updateMatrixWorld();
+        const sh = wpos(sonya.arms[1].root).add(V3(-.11, .06 + Math.sin(t * 4.4) * .01, -.03)), rest = wpos(nRoom.arms[0].root).add(V3(-.05, -.45, -.05));
+        reach(nRoom, 0, rest.lerp(sh, hug), [.35, .35, .5], 1);
+        const back = V3(HUG_N[0] + .12, .62, HUG_N[1] - .2), front = V3(HUG_N[0] - .2, .62, HUG_N[1] - .24);
+        const hs = wpos(sonya.arms[1].root), hf = wpos(sonya.arms[0].root);
+        reach(sonya, 1, hs.clone().add(V3(0, -.3, 0)).lerp(back, hug), [.4, 1.0, .5], .9);
+        reach(sonya, 0, hf.clone().add(V3(0, -.3, 0)).lerp(front, hug), [.3, 1.3, .9], .9);
+      }
       team.forEach((m, i) => {
         m.root.visible = true; teamGifts[i].visible = true;
         const [ox, oz] = TEAM_OUT[i], step = ss(seg(lt, 6.6 + i * .08, 7.6 + i * .08));
@@ -329,7 +373,7 @@ export async function buildFilm() {
     ],
     update(t, lt) {
       room.backdrop.material.map = room.night; room.lampL.intensity = .6; room.bulb.visible = true;
-      room.update(t); room.snowIn.obj.visible = false; room.vent.rotation.y = 0; room.L.mesh.visible = false; room.doorG.rotation.y = 0; room.pencil.visible = false;
+      room.update(t); room.snowIn.obj.visible = false; room.vent.rotation.y = 0; room.L.mesh.visible = false; room.doorG.rotation.y = 0; room.pencil.visible = false; room.cushion.visible = true;
       const sec = clamp(t - 76.0, -3, 0); setClock(room, 23, 59 + (lt < 2 ? lt / 2 * .99 : 1) - (lt < 2 ? 1 : 0) + (t >= 76 ? 1 : 0) * 0);
       if (t >= 76) setClock(room, 0, 0);
       // fireworks outside + coloured flashes
